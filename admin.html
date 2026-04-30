@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BURNCAMPER ADMIN DASHBOARD :: SunnyBurn Collective</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+:root { --green:#39FF14; --pink:#FF006E; --cyan:#00F5FF; --yellow:#FFD60A; --purple:#BF00FF; --bg:#050008; --panel:rgba(10,0,20,0.86); }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:radial-gradient(circle at top,#180030 0,#050008 55%,#000 100%); color:var(--green); font-family:'Share Tech Mono',monospace; padding:18px; }
+a { color:var(--cyan); }
+.header { border:1px solid var(--pink); background:rgba(10,0,20,.9); box-shadow:0 0 24px rgba(255,0,110,.18); padding:18px; margin-bottom:16px; display:flex; gap:14px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+.title { font-family:'VT323',monospace; font-size:2.35rem; color:var(--pink); text-shadow:0 0 12px var(--pink); letter-spacing:.06em; }
+.sub { color:rgba(57,255,20,.75); font-size:.9rem; margin-top:4px; }
+.version { color:var(--yellow); font-size:.8rem; margin-top:5px; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+button, .btn { font-family:'Share Tech Mono',monospace; border:1px solid var(--green); color:var(--green); background:rgba(57,255,20,.05); padding:9px 12px; cursor:pointer; text-decoration:none; display:inline-block; }
+button:hover, .btn:hover { background:rgba(57,255,20,.16); box-shadow:0 0 12px rgba(57,255,20,.25); }
+button.danger { border-color:var(--pink); color:var(--pink); }
+.login { max-width:520px; margin:60px auto; border:1px solid var(--purple); background:var(--panel); padding:24px; text-align:center; }
+.login input { width:100%; margin:8px 0; padding:12px; background:#000; border:1px solid rgba(57,255,20,.55); color:var(--green); font-family:'Share Tech Mono',monospace; }
+.status { border:1px solid rgba(0,245,255,.45); color:var(--cyan); background:rgba(0,245,255,.04); padding:10px 12px; margin-bottom:16px; }
+.status.error { color:var(--pink); border-color:var(--pink); background:rgba(255,0,110,.08); }
+.grid { display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)); gap:12px; margin-bottom:16px; }
+.card { border:1px solid rgba(57,255,20,.35); background:var(--panel); padding:14px; box-shadow:inset 0 0 18px rgba(57,255,20,.03); }
+.metric-label { color:rgba(57,255,20,.65); font-size:.78rem; text-transform:uppercase; }
+.metric-value { font-family:'VT323',monospace; font-size:2.4rem; color:var(--yellow); text-shadow:0 0 8px rgba(255,214,10,.35); }
+.panel { border:1px solid rgba(191,0,255,.55); background:var(--panel); padding:14px; margin-bottom:16px; overflow:auto; }
+.panel h2 { font-family:'VT323',monospace; color:var(--cyan); margin:0 0 12px; font-size:1.65rem; letter-spacing:.05em; }
+table { width:100%; border-collapse:collapse; min-width:760px; }
+th, td { border-bottom:1px solid rgba(57,255,20,.16); padding:8px 9px; text-align:left; vertical-align:top; font-size:.85rem; }
+th { color:var(--yellow); text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; background:rgba(255,214,10,.04); }
+.small { color:rgba(57,255,20,.6); font-size:.78rem; }
+.tag { display:inline-block; border:1px solid rgba(0,245,255,.4); color:var(--cyan); padding:2px 6px; margin:1px 2px 1px 0; font-size:.75rem; }
+.muted { color:rgba(57,255,20,.45); }
+.search-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.search-row input { flex:1; min-width:260px; background:#000; color:var(--green); border:1px solid rgba(57,255,20,.45); padding:10px; font-family:'Share Tech Mono',monospace; }
+@media (max-width:900px) { .grid { grid-template-columns:repeat(2,minmax(140px,1fr)); } .title { font-size:1.8rem; } }
+@media (max-width:560px) { body { padding:10px; } .grid { grid-template-columns:1fr; } .header { align-items:flex-start; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="title">BURNCAMPER ADMIN DASHBOARD</div>
+    <div class="sub">Private growth, camps, users, campmates, and vehicle/tent associations</div>
+    <div class="version">VER 1.6 :: ADMIN ANALYTICS :: READ ONLY</div>
+  </div>
+  <div class="actions">
+    <a class="btn" href="burncamper3000.html">← APP</a>
+    <button onclick="loadDashboard()">REFRESH</button>
+    <button class="danger" onclick="signOut()">LOGOUT</button>
+  </div>
+</div>
+
+<div id="login" class="login" style="display:none">
+  <h1 style="font-family:'VT323',monospace;color:var(--pink);font-size:2rem;margin-top:0;">ADMIN ACCESS</h1>
+  <p class="small">Sign in with the allow-listed admin account. Non-admin accounts are rejected by the Supabase RPC.</p>
+  <input id="email" type="email" placeholder="email">
+  <input id="password" type="password" placeholder="password">
+  <button onclick="loginPassword()">[ LOGIN ]</button>
+  <button onclick="loginGoogle()">CONTINUE WITH GOOGLE</button>
+</div>
+
+<div id="status" class="status">BOOTING ADMIN CONSOLE...</div>
+<div id="dashboard" style="display:none">
+  <div class="grid" id="stats"></div>
+
+  <div class="panel">
+    <h2>► Growth</h2>
+    <div id="growth"></div>
+  </div>
+
+  <div class="panel">
+    <h2>► Account users</h2>
+    <div class="search-row"><input id="userFilter" placeholder="Filter users/camps..." oninput="renderAll()"></div>
+    <div id="users"></div>
+  </div>
+
+  <div class="panel">
+    <h2>► Camps</h2>
+    <div class="search-row"><input id="campFilter" placeholder="Filter camps/owners/features..." oninput="renderAll()"></div>
+    <div id="camps"></div>
+  </div>
+
+  <div class="panel">
+    <h2>► Campmates + Vehicle/Tent associations</h2>
+    <div class="search-row"><input id="campmateFilter" placeholder="Filter campmates, camps, roles, vehicles..." oninput="renderAll()"></div>
+    <div id="campmates"></div>
+  </div>
+
+  <div class="panel">
+    <h2>► Collaborators / memberships</h2>
+    <div id="memberships"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ykquzodyyiqznctfuykz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_VGbVZK3U-Ddds1cj6lTomA_BNu7X6Xt';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let dashboardData = null;
+
+function escHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function fmtDate(value) {
+  if (!value) return '<span class="muted">—</span>';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return escHtml(value);
+  return d.toLocaleString();
+}
+function setStatus(msg, isError=false) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status' + (isError ? ' error' : '');
+}
+function matches(obj, q) {
+  if (!q) return true;
+  return JSON.stringify(obj).toLowerCase().includes(q.toLowerCase());
+}
+async function loginPassword() {
+  setStatus('LOGGING IN...');
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) return setStatus(error.message, true);
+  await boot();
+}
+async function loginGoogle() {
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } });
+  if (error) setStatus(error.message, true);
+}
+async function signOut() {
+  await sb.auth.signOut();
+  dashboardData = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login').style.display = '';
+  setStatus('SIGNED OUT');
+}
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    document.getElementById('login').style.display = '';
+    document.getElementById('dashboard').style.display = 'none';
+    setStatus('SIGN IN REQUIRED');
+    return;
+  }
+  document.getElementById('login').style.display = 'none';
+  await loadDashboard();
+}
+async function loadDashboard() {
+  setStatus('LOADING ADMIN DATA...');
+  const { data, error } = await sb.rpc('admin_dashboard');
+  if (error) {
+    document.getElementById('dashboard').style.display = 'none';
+    return setStatus(`ADMIN ACCESS DENIED OR RPC ERROR: ${error.message}`, true);
+  }
+  dashboardData = data || {};
+  document.getElementById('dashboard').style.display = '';
+  renderAll();
+  setStatus(`LOADED :: ${fmtDate(dashboardData.generated_at).replace(/<[^>]+>/g, '')}`);
+}
+function renderAll() {
+  if (!dashboardData) return;
+  renderStats(dashboardData.stats || {});
+  renderGrowth(dashboardData.growth || {});
+  renderUsers(dashboardData.users || []);
+  renderCamps(dashboardData.camps || []);
+  renderCampmates(dashboardData.campmates || []);
+  renderMemberships(dashboardData.memberships || []);
+}
+function renderStats(stats) {
+  const items = [
+    ['Registered users', stats.total_users],
+    ['Users last 7d', stats.users_last_7_days],
+    ['Active users last 7d', stats.active_users_last_7_days],
+    ['Total camps', stats.total_camps],
+    ['Updated camps last 7d', stats.updated_camps_last_7_days],
+    ['Total campmates', stats.total_campmates],
+    ['Vehicles / tents', stats.total_vehicles],
+    ['Avg campmates / camp', stats.average_campmates_per_camp],
+    ['Collaborators', stats.total_collaborators],
+    ['Active invites', stats.active_invites]
+  ];
+  document.getElementById('stats').innerHTML = items.map(([label, value]) => `
+    <div class="card"><div class="metric-label">${escHtml(label)}</div><div class="metric-value">${escHtml(value ?? 0)}</div></div>
+  `).join('');
+}
+function renderGrowth(growth) {
+  const users = growth.users_by_day || [];
+  const camps = growth.camps_by_day || [];
+  const days = [...new Set([...users.map(x => x.day), ...camps.map(x => x.day)])].sort();
+  if (!days.length) { document.getElementById('growth').innerHTML = '<div class="muted">No growth data yet.</div>'; return; }
+  const userByDay = Object.fromEntries(users.map(x => [x.day, x.count]));
+  const campByDay = Object.fromEntries(camps.map(x => [x.day, x.count]));
+  document.getElementById('growth').innerHTML = `<table><thead><tr><th>Date</th><th>New users</th><th>New camps</th></tr></thead><tbody>${days.map(day => `
+    <tr><td>${escHtml(day)}</td><td>${escHtml(userByDay[day] || 0)}</td><td>${escHtml(campByDay[day] || 0)}</td></tr>
+  `).join('')}</tbody></table>`;
+}
+function renderUsers(users) {
+  const q = document.getElementById('userFilter').value;
+  const filtered = users.filter(u => matches(u, q));
+  document.getElementById('users').innerHTML = `<table><thead><tr><th>Email</th><th>Provider</th><th>Created</th><th>Last sign-in</th><th>Owns</th><th>Collaborates</th></tr></thead><tbody>${filtered.map(u => `
+    <tr>
+      <td>${escHtml(u.email)}</td>
+      <td>${escHtml(u.provider)}</td>
+      <td>${fmtDate(u.created_at)}</td>
+      <td>${fmtDate(u.last_sign_in_at)}</td>
+      <td>${escHtml(u.camps_owned_count)}<div class="small">${(u.camps_owned || []).map(c => `<span class="tag">${escHtml(c.name)}</span>`).join('')}</div></td>
+      <td>${escHtml(u.camps_collaborating_count)}<div class="small">${(u.camps_collaborating || []).map(c => `<span class="tag">${escHtml(c.name)} · ${escHtml(c.role)}</span>`).join('')}</div></td>
+    </tr>
+  `).join('')}</tbody></table>`;
+}
+function renderCamps(camps) {
+  const q = document.getElementById('campFilter').value;
+  const filtered = camps.filter(c => matches(c, q));
+  document.getElementById('camps').innerHTML = `<table><thead><tr><th>Camp</th><th>Owner</th><th>Created</th><th>Updated</th><th>People</th><th>Vehicles/Tents</th><th>Collaborators</th><th>Features</th></tr></thead><tbody>${filtered.map(c => `
+    <tr>
+      <td>${escHtml(c.name)}<div class="small">${escHtml(c.layout_style || 'no layout')} · ${escHtml(c.camp_days || '—')} days</div></td>
+      <td>${escHtml(c.owner_email)}</td>
+      <td>${fmtDate(c.created_at)}</td>
+      <td>${fmtDate(c.updated_at)}</td>
+      <td>${escHtml(c.campmates_count)} listed / ${escHtml(c.total_people)} total</td>
+      <td>${escHtml(c.vehicles_count)}</td>
+      <td>${escHtml(c.collaborators_count)}</td>
+      <td>${Object.entries(c.features || {}).filter(([,v]) => !!v).map(([k]) => `<span class="tag">${escHtml(k)}</span>`).join('') || '<span class="muted">—</span>'}</td>
+    </tr>
+  `).join('')}</tbody></table>`;
+}
+function renderCampmates(campmates) {
+  const q = document.getElementById('campmateFilter').value;
+  const filtered = campmates.filter(p => matches(p, q));
+  document.getElementById('campmates').innerHTML = `<table><thead><tr><th>Name</th><th>Role</th><th>Camp</th><th>Owner</th><th>Dates</th><th>Vehicle/Tent</th></tr></thead><tbody>${filtered.map(p => `
+    <tr>
+      <td>${escHtml(p.name || 'Unnamed')}</td>
+      <td>${escHtml(p.role || '—')}</td>
+      <td>${escHtml(p.camp_name)}</td>
+      <td>${escHtml(p.owner_email)}</td>
+      <td>${escHtml([p.arrival_date, p.departure_date].filter(Boolean).join(' → ') || '—')}</td>
+      <td>${p.vehicle_id ? `${escHtml(p.vehicle_name || p.vehicle_id)} <span class="small">${escHtml(p.vehicle_type || '')}</span>` : '<span class="muted">Unassigned</span>'}</td>
+    </tr>
+  `).join('')}</tbody></table>`;
+}
+function renderMemberships(memberships) {
+  if (!memberships.length) { document.getElementById('memberships').innerHTML = '<div class="muted">No collaborator memberships yet.</div>'; return; }
+  document.getElementById('memberships').innerHTML = `<table><thead><tr><th>User</th><th>Camp</th><th>Role</th><th>Owner</th></tr></thead><tbody>${memberships.map(m => `
+    <tr><td>${escHtml(m.email)}</td><td>${escHtml(m.camp_name)}</td><td>${escHtml(m.role)}</td><td>${escHtml(m.owner_email)}</td></tr>
+  `).join('')}</tbody></table>`;
+}
+
+sb.auth.onAuthStateChange(() => boot());
+boot();
+</script>
+</body>
+</html>

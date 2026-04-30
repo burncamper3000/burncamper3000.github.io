@@ -949,7 +949,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="header-stars"></div>
   <div class="title" id="main-title" title="Click 7 times if you know the way">◈ THE BURNCAMPER 3000 ◈</div>
   <div class="title-sub">[ BURNING MAN CAMP DESIGN SYSTEM ]</div>
-  <div class="version-tag">VER 1.5 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
+  <div class="version-tag">VER 1.6 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
 </div>
 
 <div class="marquee-wrap">
@@ -967,6 +967,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="nav-right">
     <button class="nav-btn save"   onclick="saveProject()">[ ★ SAVE ]</button>
     <button class="nav-btn invite" onclick="createInviteLink()">[ ⇗ INVITE ]</button>
+    <a class="nav-btn" href="admin.html" title="Private admin dashboard">[ ADMIN ]</a>
     <span id="nav-user"></span>
     <button class="nav-btn danger" onclick="signOut()">LOGOUT</button>
   </div>
@@ -1007,7 +1008,10 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
       <div class="projects-title">MY CAMPS</div>
       <div class="projects-user" id="projects-user"></div>
     </div>
-    <button class="nav-btn danger" onclick="signOut()">LOGOUT</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a class="nav-btn" href="admin.html">[ ADMIN ]</a>
+      <button class="nav-btn danger" onclick="signOut()">LOGOUT</button>
+    </div>
   </div>
   <div id="projects-list"></div>
   <div class="new-project-form">
