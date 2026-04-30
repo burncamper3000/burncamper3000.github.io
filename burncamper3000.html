@@ -144,7 +144,7 @@ body::after {
 .main {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 20px 20px 110px;
 }
 
 .section-label {
@@ -167,6 +167,7 @@ body::after {
 
 @media (max-width: 768px) {
   .input-grid { grid-template-columns: 1fr; }
+  .features-panel { grid-column: span 1; }
   .title { font-size: 2.8em; }
 }
 
@@ -176,6 +177,10 @@ body::after {
   padding: 16px;
   box-shadow: 0 0 12px rgba(57,255,20,0.15), inset 0 0 12px rgba(57,255,20,0.03);
   position: relative;
+}
+
+.features-panel {
+  grid-column: span 2;
 }
 
 .panel::before {
@@ -205,7 +210,7 @@ body::after {
 
 .person-row {
   display: grid;
-  grid-template-columns: 1.3fr 1.2fr 1fr auto;
+  grid-template-columns: 1.2fr 1.1fr 0.9fr 1.2fr 0.85fr 0.85fr auto;
   gap: 8px;
   align-items: center;
 }
@@ -233,7 +238,7 @@ label {
   margin-bottom: 3px;
 }
 
-input[type="text"], input[type="number"], select, textarea {
+input[type="text"], input[type="number"], input[type="date"], select, textarea {
   background: #000;
   border: 1px solid var(--green);
   color: var(--green);
@@ -359,7 +364,17 @@ select option { background: #001a00; color: var(--green); }
 /* ── GENERATE BUTTON ── */
 .generate-wrap {
   text-align: center;
-  margin: 24px 0;
+  margin: 24px auto;
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 20;
+  width: min(420px, calc(100vw - 36px));
+  padding: 6px 8px;
+  background: rgba(10,0,20,0.74);
+  border: 1px solid rgba(255,0,110,0.28);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
 }
 
 .btn-generate {
@@ -367,8 +382,8 @@ select option { background: #001a00; color: var(--green); }
   border: 3px solid var(--pink);
   color: var(--pink);
   font-family: 'VT323', monospace;
-  font-size: 2.2em;
-  padding: 14px 50px;
+  font-size: 1.65em;
+  padding: 10px 34px;
   cursor: pointer;
   text-shadow: 0 0 10px var(--pink), 0 0 20px var(--pink);
   box-shadow: 0 0 20px rgba(255,0,110,0.3), inset 0 0 20px rgba(255,0,110,0.05);
@@ -377,6 +392,7 @@ select option { background: #001a00; color: var(--green); }
   animation: pulse-btn 2.5s ease-in-out infinite;
   position: relative;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .btn-generate::before {
@@ -872,7 +888,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="header-stars"></div>
   <div class="title" id="main-title" title="Click 7 times if you know the way">◈ THE BURNCAMPER 3000 ◈</div>
   <div class="title-sub">[ BURNING MAN CAMP DESIGN SYSTEM ]</div>
-  <div class="version-tag">VER 1.0 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
+  <div class="version-tag">VER 1.1 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
 </div>
 
 <div class="marquee-wrap">
@@ -947,8 +963,8 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="meta-row">
     <div class="meta-panel">
       <div class="section-label">► TOTAL PEOPLE</div>
-      <label>How many humans total?</label>
-      <input type="number" id="totalPeople" value="6" min="1" max="200" placeholder="e.g. 8">
+      <label>Total humans from campmate list</label>
+      <input type="number" id="totalPeople" value="0" min="0" max="200" readonly placeholder="add campmates below">
     </div>
     <div class="meta-panel">
       <div class="section-label">► CAMP DAYS</div>
@@ -984,7 +1000,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
     </div>
 
     <!-- FEATURES PANEL -->
-    <div class="panel">
+    <div class="panel features-panel">
       <div class="section-label">► CAMP FEATURES</div>
       <div class="feature-grid" id="featureGrid">
 
@@ -1355,7 +1371,7 @@ function copyInviteLink() {
 // ── STATE SAVE / RESTORE ──────────────────────
 function serializeCampState() {
   return {
-    totalPpl:    parseInt(document.getElementById('totalPeople').value) || 6,
+    totalPpl:    updateTotalPeople(),
     campDays:    parseInt(document.getElementById('campDays').value) || 7,
     layoutStyle: document.getElementById('layoutStyle').value,
     extraNotes:  document.getElementById('extraNotes').value,
@@ -1397,6 +1413,9 @@ function restoreCampData(d) {
     if (d.features.stageSize) document.getElementById('stageSize').value = d.features.stageSize;
     if (d.features.artSize)   document.getElementById('artSize').value   = d.features.artSize;
   }
+
+  updateTotalPeople();
+  refreshVehicleAssignmentControls();
 
   // Generate layout then overlay saved positions
   generateCampSilent();
@@ -1488,6 +1507,7 @@ const VEHICLE_COLORS = {
   car: '#2B5EA7',
   truck: '#7C3A3A',
   van: '#1A6B6B',
+  tent: '#2E8B57',
   other: '#6B6B1A'
 };
 
@@ -1521,14 +1541,15 @@ function addVehicle(preset) {
     <div class="vehicle-row">
       <div>
         <label>TYPE</label>
-        <select id="vtype-${id}">
+        <select id="vtype-${id}" onchange="refreshVehicleAssignmentControls()">
           <option value="rv" ${p.type==='rv'?'selected':''}>RV / Motorhome</option>
           <option value="bus" ${p.type==='bus'?'selected':''}>School Bus / Skoolie</option>
           <option value="trailer" ${p.type==='trailer'?'selected':''}>Trailer</option>
           <option value="van" ${p.type==='van'?'selected':''}>Van / Sprinter</option>
           <option value="truck" ${p.type==='truck'?'selected':''}>Pickup Truck</option>
           <option value="car" ${p.type==='car'?'selected':''}>Car</option>
-          <option value="other">Other</option>
+          <option value="tent" ${p.type==='tent'?'selected':''}>Tent</option>
+          <option value="other" ${p.type==='other'?'selected':''}>Other</option>
         </select>
       </div>
       <div>
@@ -1541,26 +1562,35 @@ function addVehicle(preset) {
       </div>
       <div>
         <label>PEOPLE</label>
-        <input type="number" id="vppl-${id}" value="${p.people||2}" min="0" max="20" placeholder="#">
+        <input type="number" id="vppl-${id}" value="${p.people||0}" min="0" max="20" readonly placeholder="#">
       </div>
       <div>
         <label>NICKNAME</label>
-        <input type="text" id="vname-${id}" value="${escAttr(p.name||'')}" placeholder="e.g. The Mothership">
+        <input type="text" id="vname-${id}" value="${escAttr(p.name||'')}" placeholder="e.g. The Mothership" oninput="refreshVehicleAssignmentControls()">
       </div>
       <button class="btn-remove" onclick="removeVehicle(${id})" title="Remove">✕</button>
     </div>`;
   document.getElementById('vehicleList').appendChild(el);
+  refreshVehicleAssignmentControls();
   setStatus(`VEHICLE #${id} ADDED`);
 }
 
 function removeVehicle(id) {
   const el = document.getElementById(`vehicle-${id}`);
   if (el) el.remove();
+  document.querySelectorAll('.person-vehicle').forEach(sel => {
+    if (sel.value === String(id)) sel.value = '';
+  });
+  refreshVehicleAssignmentControls();
   setStatus(`VEHICLE #${id} REMOVED`);
 }
 
 function getVehicles() {
   const vehicles = [];
+  const assignedCounts = getCampPeople().reduce((acc, person) => {
+    if (person.vehicleId) acc[person.vehicleId] = (acc[person.vehicleId] || 0) + 1;
+    return acc;
+  }, {});
   for (let i = 1; i <= vehicleCounter; i++) {
     if (!document.getElementById(`vehicle-${i}`)) continue;
     vehicles.push({
@@ -1568,7 +1598,7 @@ function getVehicles() {
       type:   document.getElementById(`vtype-${i}`).value,
       length: parseFloat(document.getElementById(`vlen-${i}`).value) || 20,
       width:  parseFloat(document.getElementById(`vwid-${i}`).value) || 8,
-      people: parseInt(document.getElementById(`vppl-${i}`).value) || 0,
+      people: assignedCounts[String(i)] || 0,
       name:   document.getElementById(`vname-${i}`).value || `Vehicle ${i}`
     });
   }
@@ -1576,6 +1606,8 @@ function getVehicles() {
 }
 
 let personCounter = 0;
+const DEFAULT_ARRIVAL_DATE = '2026-08-30';
+const DEFAULT_DEPARTURE_DATE = '2026-09-07';
 
 function nextPersonId() {
   let n = personCounter + 1;
@@ -1598,13 +1630,18 @@ function addPerson(preset) {
   el.innerHTML = `
     <div class="v-label">CAMPMATE #${personCounter}</div>
     <div class="person-row">
-      <div><label>NAME</label><input type="text" class="person-name" value="${escAttr(p.name||'')}" placeholder="e.g. Itai"></div>
+      <div><label>NAME</label><input type="text" class="person-name" value="${escAttr(p.name||'')}" placeholder="e.g. Itai" oninput="updateTotalPeople(); refreshAssigneeControls(); refreshVehicleAssignmentControls();"></div>
       <div><label>EMAIL / NOTE</label><input type="text" class="person-email" value="${escAttr(p.email||'')}" placeholder="optional"></div>
       <div><label>ROLE</label><input type="text" class="person-role" value="${escAttr(p.role||'')}" placeholder="kitchen, shade..."></div>
+      <div><label>VEHICLE / TENT</label><select class="person-vehicle" onchange="refreshVehicleAssignmentControls()">${vehicleOptions(p.vehicleId || '')}</select></div>
+      <div><label>ARRIVE</label><input type="date" class="person-arrival" value="${escAttr(p.arrivalDate || DEFAULT_ARRIVAL_DATE)}"></div>
+      <div><label>DEPART</label><input type="date" class="person-departure" value="${escAttr(p.departureDate || DEFAULT_DEPARTURE_DATE)}"></div>
       <button class="btn-remove" onclick="removePerson('${el.id}')" title="Remove">✕</button>
     </div>`;
   document.getElementById('peopleList').appendChild(el);
+  updateTotalPeople();
   refreshAssigneeControls();
+  refreshVehicleAssignmentControls();
 }
 
 function removePerson(rowId) {
@@ -1612,7 +1649,9 @@ function removePerson(rowId) {
   const removedId = el?.dataset.personId;
   if (el) el.remove();
   clearRemovedAssignee(removedId);
+  updateTotalPeople();
   refreshAssigneeControls();
+  refreshVehicleAssignmentControls();
 }
 
 function clearRemovedAssignee(removedId) {
@@ -1632,9 +1671,51 @@ function getCampPeople() {
       id: row.dataset.personId || `person-${idx + 1}`,
       name: name || `Camper ${idx + 1}`,
       email: row.querySelector('.person-email').value.trim(),
-      role: row.querySelector('.person-role').value.trim()
+      role: row.querySelector('.person-role').value.trim(),
+      vehicleId: row.querySelector('.person-vehicle').value,
+      arrivalDate: row.querySelector('.person-arrival').value || DEFAULT_ARRIVAL_DATE,
+      departureDate: row.querySelector('.person-departure').value || DEFAULT_DEPARTURE_DATE
     };
   });
+}
+
+function updateTotalPeople() {
+  const total = getCampPeople().length;
+  const totalInput = document.getElementById('totalPeople');
+  if (totalInput) totalInput.value = total;
+  return total;
+}
+
+function vehicleOptions(selectedId='') {
+  const vehicles = [];
+  for (let i = 1; i <= vehicleCounter; i++) {
+    if (!document.getElementById(`vehicle-${i}`)) continue;
+    const type = document.getElementById(`vtype-${i}`).value;
+    const name = document.getElementById(`vname-${i}`).value.trim() || `Vehicle ${i}`;
+    vehicles.push({ id: String(i), label: `${name} — ${type.toUpperCase()}` });
+  }
+  return `<option value="">No vehicle yet / TBD</option>` + vehicles.map(v =>
+    `<option value="${escAttr(v.id)}" ${v.id === String(selectedId) ? 'selected' : ''}>${escHtml(v.label)}</option>`
+  ).join('');
+}
+
+function refreshVehicleAssignmentControls() {
+  const validVehicleIds = new Set();
+  for (let i = 1; i <= vehicleCounter; i++) {
+    if (document.getElementById(`vehicle-${i}`)) validVehicleIds.add(String(i));
+  }
+  document.querySelectorAll('.person-vehicle').forEach(sel => {
+    const current = validVehicleIds.has(sel.value) ? sel.value : '';
+    sel.innerHTML = vehicleOptions(current);
+  });
+  const assignedCounts = getCampPeople().reduce((acc, person) => {
+    if (person.vehicleId) acc[person.vehicleId] = (acc[person.vehicleId] || 0) + 1;
+    return acc;
+  }, {});
+  for (let i = 1; i <= vehicleCounter; i++) {
+    const ppl = document.getElementById(`vppl-${i}`);
+    if (ppl) ppl.value = assignedCounts[String(i)] || 0;
+  }
 }
 
 function assigneeOptions(selectedId='') {
@@ -1825,13 +1906,13 @@ function setStatus(msg) {
 // MAIN GENERATE
 // ────────────────────────────────────────────────
 function generateCamp() {
+  const people   = getCampPeople();
   const vehicles = getVehicles();
   const features = getFeatures();
-  const totalPpl = parseInt(document.getElementById('totalPeople').value) || 6;
+  const totalPpl = updateTotalPeople();
   const days     = parseInt(document.getElementById('campDays').value) || 7;
   const layout   = document.getElementById('layoutStyle').value;
   const notes    = document.getElementById('extraNotes').value;
-  const people   = getCampPeople();
 
   if (vehicles.length === 0) { alert('ADD AT LEAST ONE VEHICLE FIRST!'); return; }
 
@@ -1855,14 +1936,14 @@ function resetLayout() {
 
 // Silent version used when restoring saved state (no tab switch, no materials rebuild)
 function generateCampSilent() {
+  const people   = getCampPeople();
   const vehicles = getVehicles();
   if (!vehicles.length) return;
   const features = getFeatures();
-  const totalPpl = parseInt(document.getElementById('totalPeople').value) || 6;
+  const totalPpl = updateTotalPeople();
   const days     = parseInt(document.getElementById('campDays').value) || 7;
   const layout   = document.getElementById('layoutStyle').value;
   const notes    = document.getElementById('extraNotes').value;
-  const people   = getCampPeople();
   campData = { vehicles, people, features, totalPpl, days, layout, notes };
   document.getElementById('outputSection').classList.add('visible');
   initCampElements(campData);
@@ -2893,7 +2974,9 @@ window.onload = function() {
   addVehicle({ type: 'rv',  length: 32, width: 8,  people: 3, name: 'The Mothership' });
   addVehicle({ type: 'van', length: 20, width: 7,  people: 2, name: 'VanLife' });
   addVehicle({ type: 'car', length: 15, width: 6,  people: 1, name: 'Support Car' });
-  addPerson({ id: 'person-1', name: 'Itai', role: 'Camp lead' });
+  addPerson({ id: 'person-1', name: 'Itai', role: 'Camp lead', vehicleId: '1' });
+  updateTotalPeople();
+  refreshVehicleAssignmentControls();
 
   setStatus('READY — CONFIGURE YOUR CAMP AND HIT GENERATE');
   bootApp();
