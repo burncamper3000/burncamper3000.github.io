@@ -82,10 +82,9 @@ body::after {
   position: relative;
 }
 
-.collective-tag {
+.collective-tag, .ik-tag {
   position: fixed;
   top: 10px;
-  left: 14px;
   font-family: 'VT323', monospace;
   font-size: 1.1em;
   color: var(--yellow);
@@ -94,6 +93,9 @@ body::after {
   z-index: 1001;
   opacity: 0.85;
 }
+
+.collective-tag { left: 14px; }
+.ik-tag { right: 14px; }
 
 .title-sub {
   font-family: 'VT323', monospace;
@@ -740,7 +742,7 @@ select option { background: #001a00; color: var(--green); }
 .nav-btn:hover { background: rgba(191,0,255,0.15); box-shadow: 0 0 8px rgba(191,0,255,0.4); }
 .nav-btn.save  { border-color: var(--green); color: var(--green); }
 .nav-btn.save:hover { background: rgba(57,255,20,0.12); box-shadow: 0 0 8px rgba(57,255,20,0.4); }
-.nav-btn.invite { border-color: var(--cyan); color: var(--cyan); }
+.nav-btn.invite { border-color: var(--cyan); color: var(--cyan); min-width: 150px; white-space: nowrap; }
 .nav-btn.invite:hover { background: rgba(0,255,255,0.1); box-shadow: 0 0 8px rgba(0,255,255,0.4); }
 .nav-btn.danger { border-color: var(--pink); color: var(--pink); }
 .nav-btn.danger:hover { background: rgba(255,0,110,0.12); }
@@ -945,11 +947,12 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
 <body>
 
 <div class="collective-tag">THE SUNNYBURN COLLECTIVE</div>
+<div class="ik-tag">IK@IL</div>
 <div class="header">
   <div class="header-stars"></div>
   <div class="title" id="main-title" title="Click 7 times if you know the way">◈ THE BURNCAMPER 3000 ◈</div>
   <div class="title-sub">[ BURNING MAN CAMP DESIGN SYSTEM ]</div>
-  <div class="version-tag">VER 1.6 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
+  <div class="version-tag">VER 1.7 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
 </div>
 
 <div class="marquee-wrap">
@@ -966,7 +969,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   </div>
   <div class="nav-right">
     <button class="nav-btn save"   onclick="saveProject()">[ ★ SAVE ]</button>
-    <button class="nav-btn invite" onclick="createInviteLink()">[ ⇗ INVITE ]</button>
+    <button class="nav-btn invite" onclick="createInviteLink()">[ ⇗ INVITE TO CAMP ]</button>
     <a class="nav-btn" href="admin.html" title="Private admin dashboard">[ ADMIN ]</a>
     <span id="nav-user"></span>
     <button class="nav-btn danger" onclick="signOut()">LOGOUT</button>
