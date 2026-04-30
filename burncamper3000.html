@@ -203,14 +203,37 @@ body::after {
 
 .vehicle-row {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr 0.8fr 0.7fr 1fr auto;
+  grid-template-columns: minmax(120px, 1.25fr) minmax(74px, 0.62fr) minmax(74px, 0.62fr) minmax(64px, 0.55fr) minmax(105px, 1fr) 34px;
   gap: 8px;
-  align-items: center;
+  align-items: end;
+}
+
+.vehicle-row > div {
+  min-width: 0;
+}
+
+.vehicle-row label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vehicle-row input,
+.vehicle-row select {
+  height: 32px;
+  min-width: 0;
+}
+
+.vehicle-row .btn-remove {
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  align-self: end;
 }
 
 .person-row {
   display: grid;
-  grid-template-columns: minmax(110px, 1.15fr) minmax(105px, 1fr) minmax(100px, 0.95fr) minmax(125px, 1.15fr) minmax(132px, 0.9fr) minmax(132px, 0.9fr) 36px;
+  grid-template-columns: minmax(120px, 1.1fr) minmax(110px, 1fr) minmax(145px, 1.25fr) minmax(130px, 1.05fr) 36px;
   gap: 8px;
   align-items: end;
 }
@@ -389,9 +412,8 @@ select option { background: #001a00; color: var(--green); }
 .generate-wrap {
   text-align: center;
   margin: 24px auto;
-  position: sticky;
-  bottom: 18px;
-  z-index: 20;
+  position: relative;
+  z-index: 1;
   width: min(720px, calc(100vw - 36px));
   padding: 0;
   background: transparent;
@@ -671,8 +693,8 @@ select option { background: #001a00; color: var(--green); }
   justify-content: space-between;
   font-size: 0.75em;
   color: rgba(57,255,20,0.5);
-  position: sticky;
-  bottom: 0;
+  position: relative;
+  margin-top: 20px;
 }
 
 .status-bar span { color: var(--green); text-shadow: 0 0 3px var(--green); }
@@ -918,7 +940,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="header-stars"></div>
   <div class="title" id="main-title" title="Click 7 times if you know the way">◈ THE BURNCAMPER 3000 ◈</div>
   <div class="title-sub">[ BURNING MAN CAMP DESIGN SYSTEM ]</div>
-  <div class="version-tag">VER 1.2 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
+  <div class="version-tag">VER 1.3 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
 </div>
 
 <div class="marquee-wrap">
@@ -1637,6 +1659,33 @@ let personCounter = 0;
 const DEFAULT_ARRIVAL_DATE = '2026-08-30';
 const DEFAULT_DEPARTURE_DATE = '2026-09-07';
 
+function dateToMonthDay(dateStr, fallback) {
+  const value = dateStr || fallback;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m ? `${m[2]}/${m[3]}` : value;
+}
+
+function dateRangeDisplay(arrivalDate, departureDate) {
+  return `${dateToMonthDay(arrivalDate, DEFAULT_ARRIVAL_DATE)}-${dateToMonthDay(departureDate, DEFAULT_DEPARTURE_DATE)}`;
+}
+
+function monthDayToIso(monthDay, fallback) {
+  const cleaned = String(monthDay || '').trim();
+  const m = /^(\d{1,2})\s*\/\s*(\d{1,2})$/.exec(cleaned);
+  if (!m) return fallback;
+  const mm = String(Math.max(1, Math.min(12, parseInt(m[1], 10)))).padStart(2, '0');
+  const dd = String(Math.max(1, Math.min(31, parseInt(m[2], 10)))).padStart(2, '0');
+  return `2026-${mm}-${dd}`;
+}
+
+function parseDateRange(range) {
+  const parts = String(range || '').split(/\s*(?:-|–|to)\s*/i).filter(Boolean);
+  return {
+    arrivalDate: monthDayToIso(parts[0], DEFAULT_ARRIVAL_DATE),
+    departureDate: monthDayToIso(parts[1], DEFAULT_DEPARTURE_DATE)
+  };
+}
+
 function nextPersonId() {
   let n = personCounter + 1;
   const existing = new Set(getCampPeople().map(p => p.id));
@@ -1659,11 +1708,9 @@ function addPerson(preset) {
     <div class="v-label">CAMPMATE #${personCounter}</div>
     <div class="person-row">
       <div><label>NAME</label><input type="text" class="person-name" value="${escAttr(p.name||'')}" placeholder="e.g. Itai" oninput="updateTotalPeople(); refreshAssigneeControls(); refreshVehicleAssignmentControls();"></div>
-      <div><label>EMAIL / NOTE</label><input type="text" class="person-email" value="${escAttr(p.email||'')}" placeholder="optional"></div>
-      <div><label>ROLE</label><input type="text" class="person-role" value="${escAttr(p.role||'')}" placeholder="kitchen, shade..."></div>
+      <div><label>ROLE</label><input type="text" class="person-role" value="${escAttr(p.role||'')}" placeholder="camp lead, kitchen..."></div>
       <div><label>VEHICLE / TENT</label><select class="person-vehicle" onchange="refreshVehicleAssignmentControls()">${vehicleOptions(p.vehicleId || '')}</select></div>
-      <div><label>ARRIVE</label><input type="date" class="person-arrival" value="${escAttr(p.arrivalDate || DEFAULT_ARRIVAL_DATE)}"></div>
-      <div><label>DEPART</label><input type="date" class="person-departure" value="${escAttr(p.departureDate || DEFAULT_DEPARTURE_DATE)}"></div>
+      <div><label>DATES ATTENDING</label><input type="text" class="person-dates" value="${escAttr(dateRangeDisplay(p.arrivalDate, p.departureDate))}" placeholder="08/30-09/07"></div>
       <button class="btn-remove" onclick="removePerson('${el.id}')" title="Remove">✕</button>
     </div>`;
   document.getElementById('peopleList').appendChild(el);
@@ -1695,14 +1742,15 @@ function clearRemovedAssignee(removedId) {
 function getCampPeople() {
   return Array.from(document.querySelectorAll('.person-item')).map((row, idx) => {
     const name = row.querySelector('.person-name').value.trim();
+    const dates = parseDateRange(row.querySelector('.person-dates')?.value || '');
     return {
       id: row.dataset.personId || `person-${idx + 1}`,
       name: name || `Camper ${idx + 1}`,
-      email: row.querySelector('.person-email').value.trim(),
+      email: '',
       role: row.querySelector('.person-role').value.trim(),
       vehicleId: row.querySelector('.person-vehicle').value,
-      arrivalDate: row.querySelector('.person-arrival').value || DEFAULT_ARRIVAL_DATE,
-      departureDate: row.querySelector('.person-departure').value || DEFAULT_DEPARTURE_DATE
+      arrivalDate: dates.arrivalDate,
+      departureDate: dates.departureDate
     };
   });
 }
