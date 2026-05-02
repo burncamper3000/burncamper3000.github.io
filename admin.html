@@ -46,11 +46,11 @@ th { color:var(--yellow); text-transform:uppercase; font-size:.75rem; letter-spa
   <div>
     <div class="title">BURNCAMPER ADMIN DASHBOARD</div>
     <div class="sub">Private growth, camps, users, campmates, and vehicle/tent associations</div>
-    <div class="version">VER 1.8 :: ADMIN ANALYTICS :: READ ONLY</div>
+    <div class="version">VER 1.9 :: ADMIN ANALYTICS :: READ ONLY</div>
   </div>
   <div class="actions">
     <a class="btn" href="burncamper3000.html">← APP</a>
-    <button onclick="loadDashboard()">REFRESH</button>
+    <button onclick="ensureSessionBeforeRefresh()">REFRESH</button>
     <button class="danger" onclick="signOut()">LOGOUT</button>
   </div>
 </div>
@@ -64,6 +64,7 @@ th { color:var(--yellow); text-transform:uppercase; font-size:.75rem; letter-spa
   <button onclick="loginGoogle()">CONTINUE WITH GOOGLE</button>
 </div>
 
+<div id="sessionSummary" class="status">CHECKING SESSION...</div>
 <div id="status" class="status">BOOTING ADMIN CONSOLE...</div>
 <div id="dashboard" style="display:none">
   <div class="grid" id="stats"></div>
@@ -117,6 +118,39 @@ function setStatus(msg, isError=false) {
   el.textContent = msg;
   el.className = 'status' + (isError ? ' error' : '');
 }
+function updateSessionSummary(session) {
+  const el = document.getElementById('sessionSummary');
+  const email = session?.user?.email;
+  if (!email) {
+    el.textContent = 'Not signed in. Log in with the allow-listed admin account to load dashboard data.';
+    el.className = 'status error';
+    return;
+  }
+  el.textContent = `Signed in as ${email}. Admin access is verified by the backend when data loads.`;
+  el.className = 'status';
+}
+function showAdminError(error, session) {
+  const signedInEmail = session?.user?.email;
+  document.getElementById('dashboard').style.display = 'none';
+  if (!signedInEmail) {
+    document.getElementById('login').style.display = '';
+    updateSessionSummary(null);
+    return setStatus('Not signed in. Please log in first, then refresh.', true);
+  }
+  updateSessionSummary(session);
+  const message = error?.message || 'Unknown admin dashboard error';
+  const hint = /Admin access required|permission|JWT|401|403/i.test(message)
+    ? `Signed in as ${signedInEmail}, but this account is not an admin or the session is not authorized.`
+    : `Backend/RPC error while signed in as ${signedInEmail}.`;
+  setStatus(`${hint} Details: ${message}`, true);
+}
+async function ensureSessionBeforeRefresh() {
+  const { data: { session }, error } = await sb.auth.getSession();
+  if (error || !session) return showAdminError(error || new Error('Not signed in'), null);
+  document.getElementById('login').style.display = 'none';
+  updateSessionSummary(session);
+  await loadDashboard(session);
+}
 function matches(obj, q) {
   if (!q) return true;
   return JSON.stringify(obj).toLowerCase().includes(q.toLowerCase());
@@ -138,27 +172,36 @@ async function signOut() {
   dashboardData = null;
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('login').style.display = '';
+  updateSessionSummary(null);
   setStatus('SIGNED OUT');
 }
 async function boot() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
+  const { data: { session }, error } = await sb.auth.getSession();
+  if (error || !session) {
     document.getElementById('login').style.display = '';
     document.getElementById('dashboard').style.display = 'none';
+    updateSessionSummary(null);
     setStatus('SIGN IN REQUIRED');
     return;
   }
   document.getElementById('login').style.display = 'none';
-  await loadDashboard();
+  updateSessionSummary(session);
+  await loadDashboard(session);
 }
-async function loadDashboard() {
+async function loadDashboard(session=null) {
   setStatus('LOADING ADMIN DATA...');
+  if (!session) {
+    const sessionResult = await sb.auth.getSession();
+    session = sessionResult.data?.session;
+    if (sessionResult.error || !session) return showAdminError(sessionResult.error || new Error('Not signed in'), null);
+  }
+  updateSessionSummary(session);
   const { data, error } = await sb.rpc('admin_dashboard');
   if (error) {
-    document.getElementById('dashboard').style.display = 'none';
-    return setStatus(`ADMIN ACCESS DENIED OR RPC ERROR: ${error.message}`, true);
+    return showAdminError(error, session);
   }
   dashboardData = data || {};
+  document.getElementById('login').style.display = 'none';
   document.getElementById('dashboard').style.display = '';
   renderAll();
   setStatus(`LOADED :: ${fmtDate(dashboardData.generated_at).replace(/<[^>]+>/g, '')}`);
