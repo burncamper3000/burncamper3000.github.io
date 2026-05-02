@@ -174,9 +174,45 @@ body::after {
 }
 
 @media (max-width: 768px) {
-  .input-grid { grid-template-columns: 1fr; }
+  body { font-size: 13px; }
+  .collective-tag, .ik-tag { position: absolute; font-size: 0.9em; letter-spacing: 0.08em; }
+  .header { padding: 32px 12px 14px; }
+  .title { font-size: clamp(2.15em, 11vw, 2.8em); letter-spacing: 0.03em; }
+  .title-sub { font-size: 1.15em; letter-spacing: 0.08em; }
+  .version-tag { font-size: 0.72em; }
+  #top-nav { align-items: stretch; padding: 8px 10px; gap: 8px; }
+  #top-nav > div:first-child { width: 100%; flex-wrap: wrap; gap: 8px; }
+  #nav-project-name { flex: 1; min-width: 160px; }
+  .nav-right { width: 100%; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  #nav-user { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-btn { min-height: 44px; padding: 8px 12px; }
+  .nav-btn.invite { min-width: 0; flex: 1 1 160px; }
+  .main { padding: 14px 10px 120px; }
+  .meta-row { grid-template-columns: 1fr; gap: 10px; }
+  .input-grid { grid-template-columns: 1fr; gap: 14px; }
   .features-panel { grid-column: span 1; }
-  .title { font-size: 2.8em; }
+  .panel { padding: 12px; min-width: 0; }
+  .section-label { font-size: 1.25em; }
+  .vehicle-row,
+  .person-row { grid-template-columns: 1fr; gap: 9px; }
+  .vehicle-row input,
+  .vehicle-row select,
+  .person-row input,
+  .person-row select { height: 44px; font-size: 1em; }
+  .vehicle-row .btn-remove,
+  .person-row .btn-remove,
+  .btn-remove { min-width: 44px; min-height: 44px; width: 44px; height: 44px; justify-self: end; }
+  .btn-add { min-height: 44px; padding: 10px 12px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .feature-item { min-height: 44px; padding: 10px 12px; }
+  .generate-wrap { width: calc(100vw - 20px); bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .btn-generate { font-size: clamp(1.05em, 5vw, 1.25em); padding: 12px 10px; letter-spacing: 0.03em; }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex: 0 0 auto; min-height: 44px; padding: 10px 14px; }
+  .tab-content { padding: 12px; }
+  .mat-item, .task-item { grid-template-columns: 1fr; gap: 6px; }
+  .mat-add-row, .new-project-form, .invite-url-row { flex-direction: column; }
+  .status-bar { flex-direction: column; gap: 3px; padding: 7px 10px; }
 }
 
 .panel {
@@ -942,6 +978,53 @@ body.sababa-pulse #campCanvas { box-shadow: 0 0 40px rgba(30,144,255,0.85), 0 0 
 body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
 @keyframes aliyah-lift { 0% { transform: translateY(0); } 45% { transform: translateY(-24px); } 100% { transform: translateY(0); } }
 
+/* ── PHONE / SMALL LANDSCAPE OVERRIDES (kept last so desktop styles above stay intact) ── */
+@media (max-width: 900px) {
+  body { font-size: 13px; }
+  .collective-tag, .ik-tag { position: absolute; font-size: 0.9em; letter-spacing: 0.08em; }
+  .header { padding: 32px 12px 14px; }
+  .title { font-size: clamp(2.15em, 11vw, 2.8em); letter-spacing: 0.03em; }
+  .title-sub { font-size: 1.15em; letter-spacing: 0.08em; }
+  .version-tag { font-size: 0.72em; }
+  #top-nav { align-items: stretch; padding: 8px 10px; gap: 8px; }
+  #top-nav > div:first-child { width: 100%; flex-wrap: wrap; gap: 8px; }
+  #nav-project-name { flex: 1; min-width: 160px; }
+  .nav-right { width: 100%; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  #nav-user { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-btn { min-height: 44px; padding: 8px 12px; }
+  .nav-btn.invite { min-width: 0; flex: 1 1 160px; }
+  .main { padding: 14px 10px 120px; }
+  .meta-row { grid-template-columns: 1fr; gap: 10px; }
+  .input-grid { grid-template-columns: 1fr; gap: 14px; }
+  .features-panel { grid-column: span 1; }
+  .panel { padding: 12px; min-width: 0; }
+  .section-label { font-size: 1.25em; }
+  .vehicle-row,
+  .person-row { grid-template-columns: 1fr; gap: 9px; }
+  .vehicle-row input,
+  .vehicle-row select,
+  .person-row input,
+  .person-row select,
+  .meta-panel input,
+  .meta-panel select,
+  .sub-options input,
+  .sub-options select { height: 44px; font-size: 1em; }
+  .vehicle-row .btn-remove,
+  .person-row .btn-remove,
+  .btn-remove { min-width: 44px; min-height: 44px; width: 44px; height: 44px; justify-self: end; }
+  .btn-add { min-height: 44px; padding: 10px 12px; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .feature-item { min-height: 44px; padding: 10px 12px; }
+  .generate-wrap { width: calc(100vw - 20px); bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .btn-generate { font-size: clamp(1.05em, 5vw, 1.25em); padding: 12px 10px; letter-spacing: 0.03em; }
+  .tab-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-btn { flex: 0 0 auto; min-height: 44px; padding: 10px 14px; }
+  .tab-content { padding: 12px; }
+  .mat-item, .task-item { grid-template-columns: 1fr; gap: 6px; }
+  .mat-add-row, .new-project-form, .invite-url-row { flex-direction: column; }
+  .status-bar { flex-direction: column; gap: 3px; padding: 7px 10px; }
+}
+
 </style>
 </head>
 <body>
@@ -952,7 +1035,7 @@ body.aliyah-lift .main { animation: aliyah-lift 2s ease-in-out; }
   <div class="header-stars"></div>
   <div class="title" id="main-title" title="Click 7 times if you know the way">◈ THE BURNCAMPER 3000 ◈</div>
   <div class="title-sub">[ BURNING MAN CAMP DESIGN SYSTEM ]</div>
-  <div class="version-tag">VER 1.7 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
+  <div class="version-tag">VER 1.8 :: BLACK ROCK DESERT EDITION :: &copy; 1997-2026<span class="blink">_</span></div>
 </div>
 
 <div class="marquee-wrap">
